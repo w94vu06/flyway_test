@@ -6,14 +6,14 @@ pipeline {
     }
 
     parameters {
-        choice(name: 'DEPLOY_ENV', choices: ['qa', 'prod'], description: '選擇部署環境')
+        choice(name: 'DEPLOY_ENV', choices: ['qa', 'prod'], description: 'choose ur env')
     }
 
     stages {
         stage('Clone Repository') {
             steps {
                 // 從 GitHub 拉取代碼
-                git branch: 'main', url: 'https://github.com/你的帳號/你的倉庫.git'
+                git branch: 'main', url: 'https://github.com/w94vu06/flyway_test.git'
             }
         }
 
@@ -29,7 +29,7 @@ pipeline {
                 // 使用 Flyway 執行資料庫變更
                 sh '''
                 flyway -url=jdbc:postgresql://db:5432/testdb \
-                       -user=user -password=password migrate
+                       -user=postgres -password=root migrate
                 '''
             }
         }
