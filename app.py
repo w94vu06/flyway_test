@@ -1,22 +1,28 @@
 import os
 import psycopg2
+import subprocess
 from flask import Flask, jsonify
 
 app = Flask(__name__)
 
-# 確保 Flask 讀取 Render 提供的環境變數
+# 讀取環境變數
 DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    raise ValueError("環境變數 DATABASE_URL 未正確載入")
+FLYWAY_PATH = "/flyway/flyway"
 
-def get_db_connection():
-    """ 建立資料庫連線 """
+def run_flyway():
+    """ 在 Flask 啟動前執行 Flyway 遷移 """
     try:
-        conn = psycopg2.connect(DATABASE_URL)
-        return conn
+        print("執行 Flyway 資料庫遷移...")
+        subprocess.run(
+            [FLYWAY_PATH, "-url=" + DATABASE_URL, "-user=" + os.getenv("POSTGRES_USER"), "-password=" + os.getenv("POSTGRES_PASSWORD"), "migrate"],
+            check=True
+        )
+        print("✅ Flyway 遷移成功！")
     except Exception as e:
-        print(f"資料庫連線錯誤: {e}")
-        return None
+        print(f"❌ Flyway 遷移失敗: {e}")
+
+# 先執行 Flyway 遷移
+run_flyway()
 
 @app.route('/')
 def home():
@@ -25,22 +31,14 @@ def home():
 @app.route('/data')
 def get_data():
     """ 查詢 example 資料表並回傳 JSON """
-    conn = get_db_connection()
-    if not conn:
-        return jsonify({"error": "無法連接資料庫"}), 500
+    conn = psycopg2.connect(DATABASE_URL)
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM example;")
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
 
-    try:
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM example;")
-        rows = cur.fetchall()
-        cur.close()
-        conn.close()
-
-        data = [{"id": row[0], "name": row[1], "email": row[2] if len(row) > 2 else None} for row in rows]
-        return jsonify(data)
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    return jsonify([{"id": row[0], "name": row[1], "email": row[2]} for row in rows])
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
