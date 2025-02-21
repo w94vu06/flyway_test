@@ -1,0 +1,1 @@
+"ALTER TABLE example ADD COLUMN phone VARCHAR(20);" 
