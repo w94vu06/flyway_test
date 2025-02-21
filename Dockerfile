@@ -7,7 +7,7 @@ WORKDIR /app
 # 複製依賴文件和應用代碼
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY app /app
+COPY . /app
 
 # 暴露 Flask 預設的埠
 EXPOSE 5000
