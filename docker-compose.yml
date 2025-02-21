@@ -1,26 +1,31 @@
 version: "3.9"
+
 services:
   app:
     build: .
     ports:
       - "5000:5000"
     depends_on:
-      - db
+      - flyway
+    env_file:
+      - .env.prod
     environment:
       FLASK_ENV: ${FLASK_ENV:-production}
+      DATABASE_URL: ${DATABASE_URL}  # Flask 連接 PostgreSQL
     volumes:
-      - .:/app  # 修正為根目錄掛載
+      - .:/app
 
-  db:
-    image: postgres:14
+  flyway:
+    image: flyway/flyway:9
+    depends_on:
+      - app
+    restart: on-failure
+    env_file:
+      - .env.prod
+    volumes:
+      - ./sql/migrations:/flyway/sql
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: root
-      POSTGRES_DB: testdb
-    ports:
-      - "5432:5432"
-    volumes:
-      - db_data:/var/lib/postgresql/data
-
-volumes:
-  db_data:
+      FLYWAY_URL: ${DATABASE_URL}  # 直接連接 Render PostgreSQL
+      FLYWAY_USER: ${POSTGRES_USER}
+      FLYWAY_PASSWORD: ${POSTGRES_PASSWORD}
+    command: -locations=filesystem:/flyway/sql -connectRetries=60 migrate
