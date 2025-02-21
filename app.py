@@ -4,8 +4,10 @@ from flask import Flask, jsonify
 
 app = Flask(__name__)
 
-# 讀取 Render 提供的 PostgreSQL 連線資訊
+# 確保 Flask 讀取 Render 提供的環境變數
 DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise ValueError("環境變數 DATABASE_URL 未正確載入")
 
 def get_db_connection():
     """ 建立資料庫連線 """
