@@ -9,12 +9,18 @@ app = Flask(__name__)
 DATABASE_URL = os.getenv("DATABASE_URL")
 FLYWAY_PATH = "/flyway/flyway"
 
+# 顯示連線的資料庫 URL
+print(f"🔥 目前連接的資料庫: {DATABASE_URL}")
+
+# Flyway 需要 `jdbc:postgresql://` 而不是 `postgresql://`
+FLYWAY_DATABASE_URL = DATABASE_URL.replace("postgresql://", "jdbc:postgresql://")
+
 def run_flyway():
     """ 在 Flask 啟動前執行 Flyway 遷移 """
     try:
-        print("執行 Flyway 資料庫遷移...")
+        print("🚀 執行 Flyway 資料庫遷移...")
         subprocess.run(
-            [FLYWAY_PATH, "-url=" + DATABASE_URL, "-user=" + os.getenv("POSTGRES_USER"), "-password=" + os.getenv("POSTGRES_PASSWORD"), "migrate"],
+            [FLYWAY_PATH, "-url=" + FLYWAY_DATABASE_URL, "-user=" + os.getenv("POSTGRES_USER"), "-password=" + os.getenv("POSTGRES_PASSWORD"), "migrate"],
             check=True
         )
         print("✅ Flyway 遷移成功！")
@@ -26,7 +32,7 @@ run_flyway()
 
 @app.route('/')
 def home():
-    return "Hello, World!"
+    return f"Hello, World! Connected to: {DATABASE_URL}"
 
 @app.route('/data')
 def get_data():
